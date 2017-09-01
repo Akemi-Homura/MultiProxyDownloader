@@ -1,5 +1,8 @@
+<<<<<<< HEAD
 # Created by .ignore support plugin (hsz.mobi)
 ### Python template
+=======
+>>>>>>> e659a3d0d4855089651c7670282962f53dd620f7
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -91,8 +94,16 @@ ENV/
 
 # Spyder project settings
 .spyderproject
+.spyproject
 
 # Rope project settings
 .ropeproject
 
+
 .idea
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
