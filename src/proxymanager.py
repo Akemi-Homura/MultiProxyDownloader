@@ -31,8 +31,12 @@ class Proxy(object):
         self._port = value
 
     def __eq__(self, other):
-        ProxyPool.check_proxy(other)
+        self.check_proxy(other)
         return self.ip == other.ip and self.port == other.port
+
+    def __ne__(self, other):
+        self.check_proxy(other)
+        return self.ip != other.ip or self.port != other.port
 
     def check_ip(self, value):
         if not isinstance(value, str):
@@ -44,37 +48,6 @@ class Proxy(object):
         if value < 1 or value > 65535:
             raise ValueError('port must be 1~65535', value)
 
-
-class ProxyPool(object):
-    def __init__(self):
-        self.proxies = []
-
-    def add_proxy(self, proxy):
-        self.check_proxy(proxy)
-        self.proxies.append(proxy)
-
-    def check_pos(self, pos):
-        if isinstance(pos, int):
-            raise ValueError('Index must be int', type(pos))
-        size = len(self.proxies)
-        if pos < 0:
-            raise ValueError('Index must be positive!', pos)
-        if pos > size:
-            raise ValueError('Index must smaller than size!', pos)
-
-    @staticmethod
-    def check_proxy(proxy):
-        if not isinstance(proxy, Proxy):
-            raise ValueError('Proxy type error!', type(proxy))
-
-    '''
-    pos 默认为0
-    '''
-
-    def get_proxy(self, pos=0):
-        return self.proxies[pos]
-
-    def set_proxy(self, pos, proxy):
-        self.check_proxy(proxy)
-        self.check_pos(pos)
-        self.proxies[pos] = proxy
+    def check_proxy(self, value):
+        if not isinstance(value, Proxy):
+            raise ValueError('Type error!Actual {},excepted {}'.format(type(value), type(Proxy)))

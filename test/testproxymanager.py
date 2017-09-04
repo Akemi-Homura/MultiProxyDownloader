@@ -39,7 +39,7 @@ class TestProxy(unittest.TestCase):
 
     def test_eq(self):
         proxy1 = Proxy(self.ip, self.port)
-        proxy2 = Proxy(self.ip2, self.port2)
+        proxy2 = Proxy(self.ip, self.port)
         self.assertEqual(proxy1, proxy2)
 
     def test_bad_ip(self):
@@ -57,17 +57,6 @@ class TestProxy(unittest.TestCase):
     def set_bad_port(self, port):
         proxy = Proxy()
         proxy.port = port
-
-
-class TestProxyPool(unittest.TestCase):
-    def setUp(self):
-        proxy_pool = ProxyPool()
-        ip, port = ('127.1.0.1', 40024)
-        ip1, port1 = ('192.168.1.1', 10805)
-
-        self.proxy = Proxy(ip, port)
-        self.proxy1 = Proxy(ip1, port1)
-        self.proxy2 = Proxy(ip, port1)
 
 
 if __name__ == '__main__':
