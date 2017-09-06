@@ -34,25 +34,20 @@ class TestThreadsPool(unittest.TestCase):
 
     def test_call(self):
         current_thread = threading.current_thread()
-        callback = Mock()
-        func = Mock(return_value=1)
-        w = (func, '1', callback)
         thread_pool = self.thread_pool
 
         with patch.object(thread_pool, 'generate_list') as glist:
-            with patch.object(thread_pool,'worker_state') as worker_state:
-                with patch.object(thread_pool,'q') as q:
-                    with patch.object(threading,'current_thread') as cthread:
-                        thread_pool.q.put(w)
-                        cthread.return_value = current_thread
-                        thread_pool.call()
+            with patch.object(thread_pool.q, 'get') as mock_get:
+                with patch.object(threading, 'current_thread') as cthread:
+                    mock_get.return_value = StopEvent
+                    cthread.return_value = current_thread
+                    thread_pool.call()
         '''
         :type glist:MagicMock
         :type cthread:MagicMock    
         '''
-        glist.assert_called_once_with(current_thread)
-        q.get.assert_called_once_with()
-        func.assert_called_once_with('1')
+        glist.append.assert_called_once_with(current_thread)
+        glist.remove.assert_called_once_with(current_thread)
 
 if __name__ == '__main__':
     unittest.main()
