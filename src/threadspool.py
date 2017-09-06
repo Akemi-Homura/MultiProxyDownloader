@@ -2,48 +2,40 @@ import threading
 from queue import Queue
 import contextlib
 
-# 线程结束事件
 StopEvent = object()
 timeout = 3
-lock = threading.Lock()
+
 
 class ThreadsPool(object):
     def __init__(self, max_thread_num=5, max_task_num=None):
-        ThreadsPool.check_positive_num(max_thread_num)
-        self.max_thread_num = max_thread_num
         if max_task_num:
             self.q = Queue(max_task_num)
         else:
             self.q = Queue()
+        self.max_thread_num = 5
         self.generate_list = []
         self.free_list = []
         self.cancel = False
         self.terminal = False
-        self.complete = 0
-        self.task_num = 0
 
     @staticmethod
     def check_positive_num(num):
         if not isinstance(num, int):
-            raise ValueError('Num type Error!Actual {}, excepted {}', type(num), type(int))
+            raise TypeError('Excepted type is {}\nActual type is {}'.format(type(int), type(num)))
         if num < 1:
-            raise ValueError('Num must be positive!Actual value is %d' % num)
+            raise ValueError('Num must be positive!Actual is %d' % num)
         return True
 
     def put(self, func, args, callback=None):
-        if self.cancel:
-            return
         if not callable(func):
             raise TypeError('Func must be callable!')
-        if callback and not callable(callback):
-            raise TypeError('Callback must be callable!')
+        if callback is not None:
+            raise TypeError('Callback must be callable or none!')
         if len(self.free_list) == 0 and len(self.generate_list) < self.max_thread_num:
             self.generate_thread()
-        # 函数三元组,函数名,参数,回调函数
+
         w = (func, args, callback)
         self.q.put(w)
-        with lock:
-            self.task_num +=1
 
     def generate_thread(self):
         t = threading.Thread(target=self.call)
@@ -53,20 +45,23 @@ class ThreadsPool(object):
         current_thread = threading.current_thread()
         self.generate_list.append(current_thread)
         event = self.q.get()
+        if self.cancel:
+            return
         while event != StopEvent:
             func, args, callback = event
             try:
                 result = func(*args)
                 success = True
             except Exception as e:
-                print('Exception', e)
+                e.with_traceback()
                 result = None
                 success = False
-            if callback is not None:
-                try:
-                    callback(success, result)
-                except Exception as e:
-                    pass
+            try:
+                callback(success, result)
+            except Exception as e:
+                # e.with_traceback()
+                pass
+
             with self.worker_state(self.free_list, current_thread):
                 if self.terminal:
                     event = StopEvent
@@ -75,6 +70,7 @@ class ThreadsPool(object):
                         event = self.q.get(timeout=timeout)
                     except Exception:
                         event = StopEvent
+
         else:
             self.generate_list.remove(current_thread)
 
@@ -87,20 +83,17 @@ class ThreadsPool(object):
         self.__put_stop_event()
 
     def await(self):
-        while self.complete < self.task_num:
+        while not self.q.empty():
             pass
-        self.close()
 
     def __put_stop_event(self):
         active_thread_num = len(self.generate_list)
-        while active_thread_num:
+        while active_thread_num > 0:
             self.q.put(StopEvent)
             active_thread_num -= 1
 
     @contextlib.contextmanager
-    def worker_state(self, state_list, thread):
-        with lock:
-            self.complete +=1
+    def worker_state(self, state_list: list, thread):
         state_list.append(thread)
         try:
             yield

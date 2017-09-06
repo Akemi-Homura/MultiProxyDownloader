@@ -88,6 +88,7 @@ class TestThreadsPool(unittest.TestCase):
         for i in range(100):
             thread_pool.put(add, (i, i + 1))
         thread_pool.await()
+        thread_pool.close()
         end()
         end.assert_called_once_with()
 
