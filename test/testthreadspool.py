@@ -15,7 +15,7 @@ class TestThreadsPool(unittest.TestCase):
         self.assertRaises(ValueError, ThreadsPool.check_positive_num, 0)
 
     def test_put(self):
-        w = (print, '1', None)
+        w = (print, ('1', '1'), None)
         w1 = (1, '1', None)
         thread_pool = ThreadsPool()
         with patch.object(ThreadsPool, 'generate_thread') as generate_thread:
@@ -37,7 +37,7 @@ class TestThreadsPool(unittest.TestCase):
         current_thread = threading.current_thread()
         thread_pool = self.thread_pool
         func = Mock(return_value=1)
-        args = '1'
+        args = ('1', 1)
         callback = Mock()
         w = (func, args, callback)
         with patch.object(thread_pool, 'generate_list') as glist:
