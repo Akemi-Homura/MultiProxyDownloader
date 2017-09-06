@@ -4,7 +4,8 @@ import contextlib
 
 # 线程结束事件
 StopEvent = object()
-
+timeout = 3
+lock = threading.Lock()
 
 class ThreadsPool(object):
     def __init__(self, max_thread_num=5, max_task_num=None):
@@ -17,7 +18,9 @@ class ThreadsPool(object):
         self.generate_list = []
         self.free_list = []
         self.cancel = False
-        self.terminate = False
+        self.terminal = False
+        self.complete = 0
+        self.task_num = 0
 
     @staticmethod
     def check_positive_num(num):
@@ -39,6 +42,8 @@ class ThreadsPool(object):
         # 函数三元组,函数名,参数,回调函数
         w = (func, args, callback)
         self.q.put(w)
+        with lock:
+            self.task_num +=1
 
     def generate_thread(self):
         t = threading.Thread(target=self.call)
@@ -51,7 +56,7 @@ class ThreadsPool(object):
         while event != StopEvent:
             func, args, callback = event
             try:
-                result = func(args)
+                result = func(*args)
                 success = True
             except Exception as e:
                 print('Exception', e)
@@ -63,10 +68,13 @@ class ThreadsPool(object):
                 except Exception as e:
                     pass
             with self.worker_state(self.free_list, current_thread):
-                if self.terminate:
+                if self.terminal:
                     event = StopEvent
                 else:
-                    event = self.q.get()
+                    try:
+                        event = self.q.get(timeout=timeout)
+                    except Exception:
+                        event = StopEvent
         else:
             self.generate_list.remove(current_thread)
 
@@ -75,12 +83,13 @@ class ThreadsPool(object):
         self.__put_stop_event()
 
     def terminate(self):
-        self.terminate = True
+        self.terminal = True
         self.__put_stop_event()
 
     def await(self):
-        while len(self.free_list) < len(self.generate_list):
+        while self.complete < self.task_num:
             pass
+        self.close()
 
     def __put_stop_event(self):
         active_thread_num = len(self.generate_list)
@@ -90,6 +99,8 @@ class ThreadsPool(object):
 
     @contextlib.contextmanager
     def worker_state(self, state_list, thread):
+        with lock:
+            self.complete +=1
         state_list.append(thread)
         try:
             yield

@@ -2,6 +2,7 @@ import unittest
 from src.threadspool import *
 from unittest.mock import *
 import threading
+import time
 
 
 class TestThreadsPool(unittest.TestCase):
@@ -35,19 +36,61 @@ class TestThreadsPool(unittest.TestCase):
     def test_call(self):
         current_thread = threading.current_thread()
         thread_pool = self.thread_pool
-
+        func = Mock(return_value=1)
+        args = '1'
+        callback = Mock()
+        w = (func, args, callback)
         with patch.object(thread_pool, 'generate_list') as glist:
-            with patch.object(thread_pool.q, 'get') as mock_get:
-                with patch.object(threading, 'current_thread') as cthread:
-                    mock_get.return_value = StopEvent
-                    cthread.return_value = current_thread
-                    thread_pool.call()
+            with patch.object(thread_pool, 'worker_state') as mock_ws:
+                with patch.object(thread_pool, 'free_list') as mock_fl:
+                    with patch.object(threading, 'current_thread', ) as mock_ct:
+                        mock_ct.return_value = current_thread
+                        thread_pool.q.put(w)
+                        thread_pool.call()
         '''
         :type glist:MagicMock
         :type cthread:MagicMock    
         '''
         glist.append.assert_called_once_with(current_thread)
         glist.remove.assert_called_once_with(current_thread)
+        mock_ws.assert_called_once_with(mock_fl, current_thread)
+        func.assert_called_once_with(*args)
+        callback.assert_called_once_with(True, 1)
+
+    def test_close(self):
+        thread_pool = self.thread_pool
+        with patch.object(thread_pool, '_ThreadsPool__put_stop_event') as pse:
+            thread_pool.close()
+        pse.assert_called_once_with()
+
+    def test_terminate(self):
+        thread_pool = self.thread_pool
+        with patch.object(thread_pool, '_ThreadsPool__put_stop_event') as pse:
+            thread_pool.terminate()
+        pse.assert_called_once_with()
+
+    def test_worker_state(self):
+        thread_pool = self.thread_pool
+        mock_list = Mock()
+        thread = threading.current_thread()
+        with thread_pool.worker_state(mock_list, thread):
+            pass
+        mock_list.append.assert_called_once_with(thread)
+        mock_list.remove.assert_called_once_with(thread)
+
+    def test_await(self):
+        thread_pool = self.thread_pool
+        end = Mock()
+
+        def add(a, b):
+            a + b
+
+        for i in range(100):
+            thread_pool.put(add, (i, i + 1))
+        thread_pool.await()
+        end()
+        end.assert_called_once_with()
+
 
 if __name__ == '__main__':
     unittest.main()
