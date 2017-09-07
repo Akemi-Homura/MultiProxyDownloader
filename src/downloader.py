@@ -5,36 +5,31 @@ from src.threadspool import *
 local_proxy = [Proxy('127.0.0.1', 80), Proxy('127.0.0.1', 1080)]
 
 
-def download(start, end, filename, proxy):
+def download(url, start, end, filename, proxy):
     headers = {'Range': 'bytes=%d-%d' % (start, end)}
     r = requests.get(url, headers=headers, stream=True, proxies=proxy)
 
-    with open(filename, 'r+b') as fp:
-        fp.seek(start)
-        var = fp.tell()
-        fp.write(r.content)
+    fp = open(filename, 'r+b')
+    fp.seek(start)
+    var = fp.tell()
+    fp.write(r.content)
+    fp.close()
 
 
-def create_file(filename):
+def get_file_size(url):
     r = requests.head(url)
+    return int(r.headers['content-length'])
 
-    try:
-        if filename is None:
-            filename = url.split('/')[-1]
-        file_size = int(r.headers['content-length'])
-    except:
-        print('URL error or don\'t support multi thread.')
-        return
 
+def create_file(filename, file_size):
     fp = open(filename, 'wb')
     fp.truncate(file_size)
     fp.close()
-    return file_size
 
 
 def assign_download(url, thread_num=5, proxies=[], filename=None):
-    format_proxies(proxies)
-    file_size=create_file(filename)
+    file_size = get_file_size(url)
+    create_file(filename, file_size)
     '''
     :param part: 每一片文件的大小
     '''
@@ -64,8 +59,8 @@ def format_proxies(proxies):
     for proxy in local_proxy:
         if proxy not in proxies:
             proxies.append(proxy)
-    map(format_proxy, proxies)
+    return list(map(format_proxy, proxies))
 
 
 if __name__ == '__main__':
-    url = sys.argv[1]
+    _url = sys.argv[1]
