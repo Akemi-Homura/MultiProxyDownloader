@@ -44,10 +44,11 @@ class TestDownloader(unittest.TestCase):
     def test_get_file_size(self):
         self.assertEqual(get_file_size(self.url), self.file_size)
 
-    @patch('src.adapter.format_proxy')
-    def test_format_proxies(self,mocked_format):
-        proxies = []
-        format_proxies(proxies)
-        mocked_format.assert_called_with()
+    @patch('builtins.list')
+    def test_format_proxies(self, mocked_list):
+        add_local_proxies(mocked_list)
+        self.assertEqual(mocked_list.append.call_count,2)
+
+
 if __name__ == '__main__':
     unittest.main()

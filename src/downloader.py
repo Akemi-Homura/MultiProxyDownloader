@@ -30,6 +30,9 @@ def create_file(filename, file_size):
 def assign_download(url, thread_num=5, proxies=[], filename=None):
     file_size = get_file_size(url)
     create_file(filename, file_size)
+    add_local_proxies(proxies)
+    list(map(format_proxy, proxies))
+
     '''
     :param part: 每一片文件的大小
     '''
@@ -55,11 +58,10 @@ def assign_download(url, thread_num=5, proxies=[], filename=None):
     thread_pool.close()
 
 
-def format_proxies(proxies):
+def add_local_proxies(proxies):
     for proxy in local_proxy:
         if proxy not in proxies:
             proxies.append(proxy)
-    return list(map(format_proxy, proxies))
 
 
 if __name__ == '__main__':
