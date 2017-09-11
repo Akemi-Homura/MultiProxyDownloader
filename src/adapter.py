@@ -19,8 +19,9 @@ def acquire_proxies(size):
         'count': size,
         'country': '国内'
     }
+    if size == 0:
+        return []
     result = requests.get(base_url, params=params)
     proxies = json.loads(result.text)
     proxy_list = [Proxy(proxies[i][0], proxies[i][1]) for i in range(len(proxies))]
     return proxy_list
-

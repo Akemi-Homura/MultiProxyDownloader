@@ -57,6 +57,8 @@ class TestDownloader(unittest.TestCase):
         threads_pool.max_thread_num = thread_num
         assign_download(self.url, threads_pool)
         self.assertEqual(threads_pool.put.call_count, thread_num)
+        threads_pool.await.assert_called_once_with()
+        threads_pool.close.assert_called_once_with()
         mocked_create_file.assert_called_once_with('20158CN-097.mp4', 1000)
 
     @patch('src.downloader.acquire_proxies')

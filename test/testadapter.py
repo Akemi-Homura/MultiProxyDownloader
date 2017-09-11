@@ -18,6 +18,7 @@ class TestAdapter(unittest.TestCase):
         proxies = acquire_proxies(10)
         self.assertTrue(isinstance(proxies[0], Proxy))
         self.assertEqual(len(proxies), 10)
+        self.assertEqual(len(acquire_proxies(0)), 0)
 
 
 if __name__ == '__main__':
