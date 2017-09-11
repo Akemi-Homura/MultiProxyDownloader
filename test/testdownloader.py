@@ -50,7 +50,7 @@ class TestDownloader(unittest.TestCase):
 
     @patch('src.downloader.create_file')
     @patch('src.downloader.get_file_size')
-    def test_assign_download(self,mocked_get_file_size,mocked_create_file):
+    def test_assign_download(self, mocked_get_file_size, mocked_create_file):
         mocked_get_file_size.return_value = 1000
         thread_num = 7
         threads_pool = Mock()
@@ -58,6 +58,14 @@ class TestDownloader(unittest.TestCase):
         assign_download(self.url, threads_pool)
         self.assertEqual(threads_pool.put.call_count, thread_num)
         mocked_create_file.assert_called_once_with('20158CN-097.mp4', 1000)
+
+    @patch('src.downloader.acquire_proxies')
+    @patch('src.downloader.assign_download')
+    def test_prepare_downloader(self, mocked_assign_downloader, mocked_acquire_proxies):
+        prepare_download(self.url)
+        mocked_acquire_proxies.assert_called_once_with(10)
+        self.assertTrue(mocked_assign_downloader.called)
+
 
 if __name__ == '__main__':
     unittest.main()

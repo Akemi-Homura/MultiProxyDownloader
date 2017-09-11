@@ -63,8 +63,7 @@ def add_local_proxies(proxies):
         proxies.append(format_proxy(proxy))
 
 
-def prepare_download(url):
-    proxy_num, thread_num = 10, 6
+def prepare_download(url,proxy_num =10,thread_num=6):
     proxies = acquire_proxies(proxy_num)
     formatted_proxies = list(map(format_proxy, proxies))
     threads_pool = ThreadsPool(thread_num)
