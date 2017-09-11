@@ -11,7 +11,6 @@ def download(url, start, end, filename, proxy):
 
     fp = open(filename, 'r+b')
     fp.seek(start)
-    var = fp.tell()
     fp.write(r.content)
     fp.close()
 
@@ -27,12 +26,14 @@ def create_file(filename, file_size):
     fp.close()
 
 
-def assign_download(url, thread_num=5, proxies=[], filename=None):
+def assign_download(url: str, thread_pool: ThreadsPool, proxies=[], filename=None):
+    if len(proxies) == 0:
+        add_local_proxies(proxies)
     file_size = get_file_size(url)
+    if filename is None:
+        filename = url.split('/')[-1]
     create_file(filename, file_size)
-    add_local_proxies(proxies)
-    list(map(format_proxy, proxies))
-
+    thread_num = thread_pool.max_thread_num
     '''
     :param part: 每一片文件的大小
     '''
@@ -43,7 +44,6 @@ def assign_download(url, thread_num=5, proxies=[], filename=None):
         else:
             print('Downloading part %d fail!' % result)
 
-    thread_pool = ThreadsPool(thread_num)
     part = file_size // thread_num
     for i in range(thread_num):
         start = part * i
@@ -52,7 +52,7 @@ def assign_download(url, thread_num=5, proxies=[], filename=None):
         else:
             end = start + part
         index = i % len(proxies)
-        thread_pool.put(download, (start, end, filename, proxies[index]), callback)
+        thread_pool.put(download, (url, start, end, filename, proxies[index]), callback)
 
     thread_pool.await()
     thread_pool.close()
@@ -60,9 +60,17 @@ def assign_download(url, thread_num=5, proxies=[], filename=None):
 
 def add_local_proxies(proxies):
     for proxy in local_proxy:
-        if proxy not in proxies:
-            proxies.append(proxy)
+        proxies.append(format_proxy(proxy))
+
+
+def prepare_download(url):
+    proxy_num, thread_num = 10, 6
+    proxies = acquire_proxies(proxy_num)
+    formatted_proxies = list(map(format_proxy, proxies))
+    threads_pool = ThreadsPool(thread_num)
+    assign_download(url, threads_pool, formatted_proxies)
 
 
 if __name__ == '__main__':
     _url = sys.argv[1]
+    prepare_download(_url)

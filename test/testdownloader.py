@@ -27,7 +27,6 @@ class TestDownloader(unittest.TestCase):
 
         mock_get.assert_called_once_with(url, headers=headers, stream=True, proxies=proxy)
         fp.seek.assert_called_once_with(start)
-        fp.tell.assert_called_once_with()
         fp.write.assert_called_once_with(r.content)
         fp.close.assert_called_once_with()
 
@@ -45,10 +44,20 @@ class TestDownloader(unittest.TestCase):
         self.assertEqual(get_file_size(self.url), self.file_size)
 
     @patch('builtins.list')
-    def test_format_proxies(self, mocked_list):
+    def test_add_local_proxies(self, mocked_list):
         add_local_proxies(mocked_list)
-        self.assertEqual(mocked_list.append.call_count,2)
+        self.assertEqual(mocked_list.append.call_count, 2)
 
+    @patch('src.downloader.create_file')
+    @patch('src.downloader.get_file_size')
+    def test_assign_download(self,mocked_get_file_size,mocked_create_file):
+        mocked_get_file_size.return_value = 1000
+        thread_num = 7
+        threads_pool = Mock()
+        threads_pool.max_thread_num = thread_num
+        assign_download(self.url, threads_pool)
+        self.assertEqual(threads_pool.put.call_count, thread_num)
+        mocked_create_file.assert_called_once_with('20158CN-097.mp4', 1000)
 
 if __name__ == '__main__':
     unittest.main()

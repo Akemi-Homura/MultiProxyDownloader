@@ -29,7 +29,7 @@ class ThreadsPool(object):
     def put(self, func, args, callback=None):
         if not callable(func):
             raise TypeError('Func must be callable!')
-        if callback is not None:
+        if callback is not None and not callable(callback):
             raise TypeError('Callback must be callable or none!')
         if len(self.free_list) == 0 and len(self.generate_list) < self.max_thread_num:
             self.generate_thread()
